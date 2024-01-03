@@ -7,7 +7,7 @@ bot = telebot.TeleBot("6399662421:AAGYRA_YIm52fNe5dyl1uHVNONbfDf9RhXU")
 def start_markup(status):
     markup = types.InlineKeyboardMarkup(row_width=True)
     link_keyboard = types.InlineKeyboardButton(text="Barcha kanalga bittada qo'shilish", url="https://t.me/addlist/dlpwMmHRLdFhMDAy")
-    link_to_the_channel = types.InlineKeyboardButton(text="Marathon kanali", url="https://t.me/+yNK1vLdpprY0YjRi")
+    link_to_the_channel = types.InlineKeyboardButton(text="Marathon kanali", url="https://t.me/+-s5zqa6qkXpjYmFi")
     check_keyboard = types.InlineKeyboardButton(text="Tekshirish ✅", callback_data="check")
     link_keyboard1 = types.InlineKeyboardButton(text="Azizbek Zaripov", url="t.me/akzaripovs")
     link_keyboard2 = types.InlineKeyboardButton(text="Abrorbek Nematov", url="https://t.me/Nematov_Abrorbek")
