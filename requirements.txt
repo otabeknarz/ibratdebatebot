@@ -1,1 +1,4 @@
-telebot
+aiogram
+asyncio
+logging
+sys
