@@ -114,7 +114,7 @@ async def toshkent(message: Message, state: FSMContext) -> None:
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="09.02.2024 16:00dagi"),
+                    KeyboardButton(text="16.02.2024 16:00dagi"),
                 ]
             ],
             resize_keyboard=True,
@@ -149,7 +149,7 @@ async def toshkent(message: Message, state: FSMContext) -> None:
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="on 09.02.2024 16:00"),
+                    KeyboardButton(text="on 16.02.2024 16:00"),
                 ]
             ],
             resize_keyboard=True,
