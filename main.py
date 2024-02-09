@@ -176,7 +176,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
 
 @form_router.message(Form.date)
 async def process_name(message: Message, state: FSMContext) -> None:
-    await state.update_data(date="09.02.2024")
+    await state.update_data(date="16.02.2024 or 17.02.2024")
     await state.set_state(Form.name)
     data = await state.get_data()
     language = data.get('lang', 'N/A')
