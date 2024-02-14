@@ -131,7 +131,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="17.02.2024 11:00dagi"),
+                    KeyboardButton(text="17.02.2024 14:00dagi"),
                 ]
             ],
             resize_keyboard=True,
@@ -166,7 +166,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="on 17.02.2024 11:00"),
+                    KeyboardButton(text="on 17.02.2024 14:00"),
                 ]
             ],
             resize_keyboard=True,
