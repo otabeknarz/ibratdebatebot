@@ -16,7 +16,7 @@ from aiogram.types import (
 )
 
 TOKEN = getenv("BOT_TOKEN")
-bot = Bot(token="6731464739:AAF0MjIuQPQDSsruL3-bTtWN6z4G8S6AGGA", parse_mode=ParseMode.HTML)
+bot = Bot(token="6731464739:AAF0MjIuQPQDSsruL3-bTtWN6z4G8S6AGGA")
 
 form_router = Router()
 
@@ -47,23 +47,6 @@ async def command_start(message: Message, state: FSMContext) -> None:
     )
 
 
-@form_router.message(Command("cancel"))
-@form_router.message(F.text.casefold() == "cancel")
-async def cancel_handler(message: Message, state: FSMContext) -> None:
-    """
-    Allow user to cancel any action
-    """
-    current_state = await state.get_state()
-    if current_state is None:
-        return
-
-    logging.info("Cancelling state %r", current_state)
-    await state.clear()
-    await message.answer(
-        "Cancelled.",
-        reply_markup=ReplyKeyboardRemove(),
-    )
-
 
 
 
@@ -79,6 +62,7 @@ async def Uzbek(message: Message, state: FSMContext) -> None:
                 [
                     KeyboardButton(text="Toshkent"),
                     KeyboardButton(text="Samarqand"),
+                    KeyboardButton(text="Surxondaryo"),
                 ]
             ],
             resize_keyboard=True,
@@ -97,6 +81,7 @@ async def English(message: Message, state: FSMContext) -> None:
                 [
                     KeyboardButton(text="Tashkent"),
                     KeyboardButton(text="Samarkand"),
+                    KeyboardButton(text="Surxondaryo"),
                 ]
             ],
             resize_keyboard=True,
@@ -104,79 +89,115 @@ async def English(message: Message, state: FSMContext) -> None:
     )
 
 
-@form_router.message(Form.region, F.text.casefold() == "toshkent")
+@form_router.message(lambda message: message.text.lower() in ["tashkent", "toshkent"], Form.region)
 async def toshkent(message: Message, state: FSMContext) -> None:
     await state.update_data(region="Toshkent")
     await state.set_state(Form.date)
+    data = await state.get_data()
+    language = data.get('lang', 'N/A')
+    if(language == "Uzbek"):
+        await message.answer(
+            f"Qaysi bir kuni debatega qatnashmoqchisiz ?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="23.02.2024 16:00dagi"),
+                    ]
+                ],
+                resize_keyboard=True,
+            ),
+        )
+    else:
+        await message.answer(
+            f"Which session you want to attend ?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="on 23.02.2024 16:00"),
+                    ]
+                ],
+                resize_keyboard=True,
+            ),
+        )
+    
 
-    await message.answer(
-        f"Qaysi bir kuni debatega qatnashmoqchisiz ?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(text="16.02.2024 16:00dagi"),
-                ]
-            ],
-            resize_keyboard=True,
-        ),
-    )
+# @form_router.message(Form.region, F.text.casefold() == "tashkent")
+# async def toshkent(message: Message, state: FSMContext) -> None:
+#     await state.update_data(region="Toshkent")
+#     await state.set_state(Form.date)
 
-@form_router.message(Form.region, F.text.casefold() == "samarqand")
+    
+
+@form_router.message(lambda message: message.text.lower() in ["samarqand", "samarkand"], Form.region)
 async def samarqand(message: Message, state: FSMContext) -> None:
     await state.update_data(region="Samarqand")
     await state.set_state(Form.date)
+    data = await state.get_data()
+    language = data.get('lang', 'N/A')
+    if(language == "Uzbek"):
+        await message.answer(
+            f"Qaysi bir kuni debatega qatnashmoqchisiz ?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="24.02.2024 13:30dagi"),
+                    ]
+                ],
+                resize_keyboard=True,
+            ),
+        )
+    else:
+        await message.answer(
+            f"Which session you want to attend ?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="on 24.02.2024 13:30"),
+                    ]
+                ],
+                resize_keyboard=True,
+            ),
+        )
 
-    await message.answer(
-        f"Qaysi bir kuni debatega qatnashmoqchisiz ?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(text="17.02.2024 14:00dagi"),
-                ]
-            ],
-            resize_keyboard=True,
-        ),
-    )
 
-
-@form_router.message(Form.region, F.text.casefold() == "tashkent")
-async def toshkent(message: Message, state: FSMContext) -> None:
-    await state.update_data(region="Toshkent")
-    await state.set_state(Form.date)
-
-    await message.answer(
-        f"Which session you want to attend ?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(text="on 16.02.2024 16:00"),
-                ]
-            ],
-            resize_keyboard=True,
-        ),
-    )
-
-@form_router.message(Form.region, F.text.casefold() == "samarkand")
+@form_router.message(lambda message: message.text.lower() in ["surxondaryo"], Form.region)
 async def samarqand(message: Message, state: FSMContext) -> None:
-    await state.update_data(region="Samarqand")
+    await state.update_data(region="Surxondaryo")
     await state.set_state(Form.date)
+    data = await state.get_data()
+    language = data.get('lang', 'N/A')
+    if(language == "Uzbek"):
+        await message.answer(
+            f"Qaysi bir kuni debatega qatnashmoqchisiz ?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="28.02.2024 15:00dagi"),
+                    ]
+                ],
+                resize_keyboard=True,
+            ),
+        )
+    else:
+        await message.answer(
+            f"Which session you want to attend ?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="on 28.02.2024 15:00"),
+                    ]
+                ],
+                resize_keyboard=True,
+            ),
+        )
 
-    await message.answer(
-        f"Which session you want to attend ?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(text="on 17.02.2024 14:00"),
-                ]
-            ],
-            resize_keyboard=True,
-        ),
-    )
+
+    
 
 
 @form_router.message(Form.date)
 async def process_name(message: Message, state: FSMContext) -> None:
-    await state.update_data(date="16.02.2024 or 17.02.2024")
+    await state.update_data(date="23.02.2024 or 24.02.2024")
     await state.set_state(Form.name)
     data = await state.get_data()
     language = data.get('lang', 'N/A')
@@ -207,25 +228,38 @@ async def send_user_info(message: Message, state: FSMContext) -> None:
     # getting the user name
     await state.update_data(username = message.from_user.username)
 
+    channel_id_tashkent = -1002079456954  # data channel id
+    channel_id_samarkand = -1002103687550
+    channel_id_surxondaryo = -1002146383510
+    group_link = ""
+    date = ""
 
     data = await state.get_data()
+
+
     message_text = f"User Information:\n\n"
     message_text += f"Region: {data.get('region', 'N/A')}\n"
-    message_text += f"Date: {data.get('date', 'N/A')}\n"
     message_text += f"Name: {data.get('name', 'N/A')}\n"
     message_text += f"telegram username: @{data.get('username', 'N/A')}\n"
     message_text += f"Phone Number: {data.get('number', 'N/A')}\n"
 
-    channel_id_tashkent = -1002079456954  # data channel id
-    channel_id_samarkand = -1002103687550
-    group_link = ""
     if data.get('region', 'N/A') == "Toshkent":
-        await bot.send_message(channel_id_tashkent, message_text)
         group_link= "https://t.me/+9FsbILdXfWkwZGYy"
+        date = "23-fevral"
+        message_text += f"Date: {date}\n"
+        await bot.send_message(channel_id_tashkent, message_text)
+
     elif data.get('region', 'N/A') == "Samarqand":
-        await bot.send_message(channel_id_samarkand, message_text)
         group_link= "https://t.me/+C5s6G4wWnMw2OTIy"
-    else: return True
+        date = "24-fevral"
+        message_text += f"Date: {date}\n"
+        await bot.send_message(channel_id_samarkand, message_text)
+    elif data.get('region', 'N/A') == "Surxondaryo":
+        group_link= "https://t.me/+Iwwunl-CoEljMTBi"
+        date = "28-fevral"
+        message_text += f"Date: {date}\n"
+        await bot.send_message(channel_id_surxondaryo, message_text)
+
 
 
     user_id = message.from_user.id
