@@ -240,8 +240,8 @@ async def send_user_info(message: Message, state: FSMContext) -> None:
     message_text = f"User Information:\n\n"
     message_text += f"Region: {data.get('region', 'N/A')}\n"
     message_text += f"Name: {data.get('name', 'N/A')}\n"
-    message_text += f"telegram username: @{data.get('username', 'N/A')}\n"
-    message_text += f"Phone Number: {data.get('number', 'N/A')}\n"
+    message_text += f"Telegram username: @{data.get('username', 'N/A')}\n"
+    message_text += f"Phone number: {data.get('number', 'N/A')}\n"
 
     if data.get('region', 'N/A') == "Toshkent":
         group_link= "https://t.me/+9FsbILdXfWkwZGYy"
