@@ -23,21 +23,21 @@ form_router = Router()
 
 class Form(StatesGroup):
     lang = State()
-    channel_followed = State()
+    # channel_followed = State()
     region = State()
     date = State()
     name = State()
     number = State()
     username = State()
 
-async def is_user_member(channel_id: int, user: User) -> bool:
-    """Check if the user is a member of the channel."""
-    try:
-        member = await bot.get_chat_member(channel_id, user.id)
-        return member.status in ["member", "administrator"]
-    except Exception as e:
-        logging.exception("Error occurred while checking channel membership")
-        return False
+# async def is_user_member(channel_id: int, user: User) -> bool:
+#     """Check if the user is a member of the channel."""
+#     try:
+#         member = await bot.get_chat_member(channel_id, user.id)
+#         return member.status in ["member", "administrator"]
+#     except Exception as e:
+#         logging.exception("Error occurred while checking channel membership")
+#         return False
 
 @form_router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext) -> None:
@@ -58,57 +58,26 @@ async def command_start(message: Message, state: FSMContext) -> None:
 @form_router.message(Form.lang, F.text.casefold() == "uzbek")
 async def Uzbek(message: Message, state: FSMContext) -> None:
     await state.update_data(lang="Uzbek")
-    await state.set_state(Form.channel_followed)
+    await state.set_state(Form.region)
     await message.answer(
-        "Debatlar haqida eng so'nggi yangiliklarni olish uchun kanalimizga a'zo bo'ling: [Kanalga o'tish](https://t.me/debatuz)",
-        parse_mode=ParseMode.MARKDOWN,
+        f"Qaysi bir hududdagi klubga qatnashmoqchisiz ?",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="Toshkent"),
+                    # KeyboardButton(text="Samarqand"),
+                    # KeyboardButton(text="Surxondaryo"),
+                ]
+            ],
+            resize_keyboard=True,
+        ),
     )
 
 @form_router.message(Form.lang, F.text.casefold() == "enlish")
 async def English(message: Message, state: FSMContext) -> None:
     await state.update_data(lang="English")
-    await state.set_state(Form.channel_followed)
-    await message.answer(
-        "Subscribe to our channel for latest news about upcoming debates: [Go to the channel](https://t.me/debatuz)",
-        parse_mode=ParseMode.MARKDOWN,
-    )
-
-
-
-@form_router.message(Form.channel_followed)
-async def channel_followed(message: Message, state: FSMContext) -> None:
-    # Check if the user followed the channel
-    channel_id = -1002129599742
-    is_member = await is_user_member(channel_id, message.from_user)
-    data = await state.get_data()
-    language = data.get("lang")
-    if not is_member:
-        if language == "English":
-            await message.answer("Please subscribe to our channel and try again.")
-            return
-        else:
-            await message.answer("Iltimos, kanalimizga a'zo bo'ling va keyin qayta urinib ko'ring.")
-            return
-
-    
-
     await state.set_state(Form.region)
-    if language == "Uzbek":
-        await message.answer(
-            f"Qaysi bir hududdagi klubga qatnashmoqchisiz ?",
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard=[
-                    [
-                        KeyboardButton(text="Toshkent"),
-                        # KeyboardButton(text="Samarqand"),
-                        # KeyboardButton(text="Surxondaryo"),
-                    ]
-                ],
-                resize_keyboard=True,
-            ),
-        )
-    else:
-        await message.answer(
+    await message.answer(
             f"Where do you want to participate ?",
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
@@ -121,6 +90,55 @@ async def channel_followed(message: Message, state: FSMContext) -> None:
                 resize_keyboard=True,
             ),
         )
+
+
+
+# @form_router.message(Form.channel_followed)
+# async def channel_followed(message: Message, state: FSMContext) -> None:
+#     # Check if the user followed the channel
+#     channel_id = -1002129599742
+#     is_member = await is_user_member(channel_id, message.from_user)
+#     data = await state.get_data()
+#     language = data.get("lang")
+#     if not is_member:
+#         if language == "English":
+#             await message.answer("Please subscribe to our channel and try again.")
+#             return
+#         else:
+#             await message.answer("Iltimos, kanalimizga a'zo bo'ling va keyin qayta urinib ko'ring.")
+#             return
+
+    
+
+    # await state.set_state(Form.region)
+    # if language == "Uzbek":
+    #     await message.answer(
+    #         f"Qaysi bir hududdagi klubga qatnashmoqchisiz ?",
+    #         reply_markup=ReplyKeyboardMarkup(
+    #             keyboard=[
+    #                 [
+    #                     KeyboardButton(text="Toshkent"),
+    #                     # KeyboardButton(text="Samarqand"),
+    #                     # KeyboardButton(text="Surxondaryo"),
+    #                 ]
+    #             ],
+    #             resize_keyboard=True,
+    #         ),
+    #     )
+    # else:
+    #     await message.answer(
+    #         f"Where do you want to participate ?",
+    #         reply_markup=ReplyKeyboardMarkup(
+    #             keyboard=[
+    #                 [
+    #                     KeyboardButton(text="Tashkent"),
+    #                     # KeyboardButton(text="Samarkand"),
+    #                     # KeyboardButton(text="Surxondaryo"),
+    #                 ]
+    #             ],
+    #             resize_keyboard=True,
+    #         ),
+    #     )
 
 
 # @form_router.message(Form.lang, F.text.casefold() == "english")
@@ -167,7 +185,7 @@ async def toshkent(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="on 02.02.2024 16:00"),
+                        KeyboardButton(text="on 02.03.2024 16:00"),
                     ]
                 ],
                 resize_keyboard=True,
