@@ -73,7 +73,7 @@ async def Uzbek(message: Message, state: FSMContext) -> None:
         ),
     )
 
-@form_router.message(Form.lang, F.text.casefold() == "enlish")
+@form_router.message(Form.lang, F.text.casefold() == "english")
 async def English(message: Message, state: FSMContext) -> None:
     await state.update_data(lang="English")
     await state.set_state(Form.region)
@@ -240,7 +240,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
     language = data.get('lang', 'N/A')
     if(language == "Uzbek"):
         await message.answer(
-            f"Qaysi bir kuni debatega qatnashmoqchisiz ?",
+            f"Qaysi bir kuni debatda qatnashmoqchisiz ?",
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
