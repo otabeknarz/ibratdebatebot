@@ -14,10 +14,12 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
+from db import Database
+
 
 TOKEN = getenv("BOT_TOKEN")
 bot = Bot(token="6731464739:AAF0MjIuQPQDSsruL3-bTtWN6z4G8S6AGGA")
-
+db = Database('database.db')
 form_router = Router()
 
 
@@ -33,6 +35,8 @@ class Form(StatesGroup):
 
 @form_router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext) -> None:
+    if not db.user_exists(message.from_user.id):
+        db.add_user(message.from_user.id)
     await state.set_state(Form.lang)
     await message.answer(
         f"Tilni tanlang / Select the language",
@@ -46,6 +50,23 @@ async def command_start(message: Message, state: FSMContext) -> None:
             resize_keyboard=True,
         ),
     )
+    
+@form_router.message(Command("sendall"))
+async def sendall(message: Message):
+    if message.from_user.id == 1251979840:
+        text = message.text[9:]
+        users = db.get_users()
+        for row in users:
+            try:
+                await bot.send_message(row[0], text)
+                if int(row[1]) != 1:
+                    db.set_active(row[0], 1)
+            except:
+                db.set_active(row[0], 0)
+        
+        await bot.send_message(message.from_user.id, "The message was sent")
+
+
 
 @form_router.message(Form.lang, F.text.casefold() == "uzbek")
 async def Uzbek(message: Message, state: FSMContext) -> None:
