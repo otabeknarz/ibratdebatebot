@@ -13,13 +13,18 @@ from aiogram.types import (
     Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
 )
-from db import Database
+from aiogram import types
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from db import user_exists, add_user, set_active, get_users  # Import database functions
 
 
-TOKEN = getenv("BOT_TOKEN")
 bot = Bot(token="6731464739:AAF0MjIuQPQDSsruL3-bTtWN6z4G8S6AGGA")
-db = Database('database.db')
+CHANNEL_ID = "-1002129599742"
+NOT_SUB_MESSAGE_UZB = f"Ro'yxatdan o'ta olish uchun telegram kanalimizga ulaning"                   
+NOT_SUB_MESSAGE_ENG = f"To be able to register,subscribe to our channel"
 form_router = Router()
 
 
@@ -32,11 +37,18 @@ class Form(StatesGroup):
     number = State()
     username = State()
 
+def check_sub_channel(chat_member):
+    print(chat_member.status)
+    if chat_member.status != 'left':
+        return False
+    else:
+        return True
 
 @form_router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext) -> None:
-    if not db.user_exists(message.from_user.id):
-        db.add_user(message.from_user.id)
+    if not user_exists(message.from_user.id):
+        add_user(message.from_user.id)
+
     await state.set_state(Form.lang)
     await message.answer(
         f"Tilni tanlang / Select the language",
@@ -55,14 +67,14 @@ async def command_start(message: Message, state: FSMContext) -> None:
 async def sendall(message: Message):
     if message.from_user.id == 1251979840:
         text = message.text[9:]
-        users = db.get_users()
+        users = get_users()
         for row in users:
             try:
                 await bot.send_message(row[0], text)
                 if int(row[1]) != 1:
-                    db.set_active(row[0], 1)
+                    set_active(row[0], 1)
             except:
-                db.set_active(row[0], 0)
+                set_active(row[0], 0)
         
         await bot.send_message(message.from_user.id, "The message was sent")
 
@@ -72,31 +84,25 @@ async def sendall(message: Message):
 async def Uzbek(message: Message, state: FSMContext) -> None:
     await state.update_data(lang="Uzbek")
     await state.set_state(Form.region)
-    await message.answer(
-        f"Qaysi bir hududdagi klubga qatnashmoqchisiz ?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(text="Toshkent"),
-                    KeyboardButton(text="Samarqand"),
-                    KeyboardButton(text="Surxondaryo"),
-                ]
-            ],
-            resize_keyboard=True,
-        ),
-    )
 
-@form_router.message(Form.lang, F.text.casefold() == "english")
-async def English(message: Message, state: FSMContext) -> None:
-    await state.update_data(lang="English")
-    await state.set_state(Form.region)
-    await message.answer(
-            f"Where do you want to participate ?",
+    if check_sub_channel(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id,)):
+        
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="Obuna bo'ling", url="https://t.me/debatuz"),)
+        builder.row(InlineKeyboardButton(text="Tekshirish✅", callback_data="subchanneldone"))
+
+        await message.answer(
+            text = NOT_SUB_MESSAGE_UZB,
+            reply_markup=builder.as_markup(),
+        )
+    else:
+        await message.answer(
+            f"Qaysi bir hududdagi klubga qatnashmoqchisiz ?",
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="Tashkent"),
-                        KeyboardButton(text="Samarkand"),
+                        KeyboardButton(text="Toshkent"),
+                        KeyboardButton(text="Samarqand"),
                         KeyboardButton(text="Surxondaryo"),
                     ]
                 ],
@@ -104,6 +110,88 @@ async def English(message: Message, state: FSMContext) -> None:
             ),
         )
 
+
+@form_router.callback_query(F.data == "subchanneldone")
+async def check(callback: types.CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    if check_sub_channel(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)):
+        await bot.delete_message(chat_id=user_id, message_id=callback.message.message_id)
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="Obuna bo'ling", url="https://t.me/debatuz"))
+        builder.row(InlineKeyboardButton(text="Tekshirish✅", callback_data="subchanneldone"))
+
+        await bot.send_message(user_id, text=NOT_SUB_MESSAGE_UZB, reply_markup=builder.as_markup())
+    else:
+        await bot.send_message(user_id, f"Qaysi bir hududdagi klubga qatnashmoqchisiz ?", 
+                               reply_markup=ReplyKeyboardMarkup(
+                                   keyboard=[
+                                       [
+                                           KeyboardButton(text="Toshkent"),
+                                           KeyboardButton(text="Samarqand"),
+                                           KeyboardButton(text="Surxondaryo"),
+                                       ]
+                                   ],
+                                   resize_keyboard=True,
+                               ))
+    await callback.answer()
+
+
+@form_router.message(Form.lang, F.text.casefold() == "english")
+async def English(message: Message, state: FSMContext) -> None:
+    await state.update_data(lang="English")
+    await state.set_state(Form.region)
+
+    if check_sub_channel(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id,)):
+        
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="Subsribe", url="https://t.me/debatuz"),)
+        builder.row(InlineKeyboardButton(text="Done✅", callback_data="subchanneldoneEng"))
+
+        await message.answer(
+            text = NOT_SUB_MESSAGE_ENG,
+            reply_markup=builder.as_markup(),
+        )
+    else:
+        await message.answer(
+                f"Where do you want to participate ?",
+                reply_markup=ReplyKeyboardMarkup(
+                    keyboard=[
+                        [
+                            KeyboardButton(text="Tashkent"),
+                            KeyboardButton(text="Samarkand"),
+                            KeyboardButton(text="Surxondaryo"),
+                        ]
+                    ],
+                    resize_keyboard=True,
+                ),
+            )
+
+@form_router.callback_query(F.data == "subchanneldoneEng")
+async def check(callback: types.CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    if check_sub_channel(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)):
+        await bot.delete_message(chat_id=user_id, message_id=callback.message.message_id)
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="Subsribe", url="https://t.me/debatuz"),)
+        builder.row(InlineKeyboardButton(text="Done✅", callback_data="subchanneldoneEng"))
+
+        await bot.send_message(user_id, text=NOT_SUB_MESSAGE_UZB, reply_markup=builder.as_markup())
+    else:
+        
+        await bot.send_message(user_id,
+                text=f"Where do you want to participate ?",
+                reply_markup=ReplyKeyboardMarkup(
+                    keyboard=[
+                        [
+                            KeyboardButton(text="Tashkent"),
+                            KeyboardButton(text="Samarkand"),
+                            KeyboardButton(text="Surxondaryo"),
+                        ]
+                    ],
+                    resize_keyboard=True,
+                ),
+            )
+    await callback.answer()
 
 
 
@@ -120,7 +208,7 @@ async def toshkent(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="07.03.2024 16:00dagi"),
+                        KeyboardButton(text="16.03.2024 13:00dagi"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -132,7 +220,7 @@ async def toshkent(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="on 07.03.2024 16:00"),
+                        KeyboardButton(text="on 16.03.2024 13:00"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -153,7 +241,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="09.03.2024 13:30dagi"),
+                        KeyboardButton(text="16.03.2024 13:30dagi"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -165,7 +253,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="on 09.03.2024 13:30"),
+                        KeyboardButton(text="on 16.03.2024 13:30"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -185,7 +273,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="09.03.2024 14:00dagi"),
+                        KeyboardButton(text="15.03.2024 14:00dagi"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -197,7 +285,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [
-                        KeyboardButton(text="on 09.03.2024 14:00"),
+                        KeyboardButton(text="on 15.03.2024 14:00"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -210,7 +298,7 @@ async def samarqand(message: Message, state: FSMContext) -> None:
 
 @form_router.message(Form.date)
 async def process_name(message: Message, state: FSMContext) -> None:
-    await state.update_data(date="09.03.2024 or 07.03.2024")
+    await state.update_data(date="16.03.2024 or 15.03.2024")
     await state.set_state(Form.name)
     data = await state.get_data()
     language = data.get('lang', 'N/A')
@@ -258,18 +346,18 @@ async def send_user_info(message: Message, state: FSMContext) -> None:
 
     if data.get('region', 'N/A') == "Toshkent":
         group_link= "https://t.me/+9FsbILdXfWkwZGYy"
-        date = "7-mart"
+        date = "16-mart"
         message_text += f"Date: {date}\n"
         await bot.send_message(channel_id_tashkent, message_text)
 
     elif data.get('region', 'N/A') == "Samarqand":
         group_link= "https://t.me/+C5s6G4wWnMw2OTIy"
-        date = "9-mart"
+        date = "16-mart"
         message_text += f"Date: {date}\n"
         await bot.send_message(channel_id_samarkand, message_text)
     elif data.get('region', 'N/A') == "Surxondaryo":
         group_link= "https://t.me/+Iwwunl-CoEljMTBi"
-        date = "9-mart"
+        date = "15-mart"
         message_text += f"Date: {date}\n"
         await bot.send_message(channel_id_surxondaryo, message_text)
 
