@@ -103,7 +103,7 @@ async def Uzbek(message: Message, state: FSMContext) -> None:
                     [
                         KeyboardButton(text="Toshkent"),
                         KeyboardButton(text="Samarqand"),
-                        KeyboardButton(text="Surxondaryo"),
+                        # KeyboardButton(text="Surxondaryo"),
                     ]
                 ],
                 resize_keyboard=True,
@@ -128,7 +128,7 @@ async def check(callback: types.CallbackQuery, state: FSMContext):
                                        [
                                            KeyboardButton(text="Toshkent"),
                                            KeyboardButton(text="Samarqand"),
-                                           KeyboardButton(text="Surxondaryo"),
+                                        #    KeyboardButton(text="Surxondaryo"),
                                        ]
                                    ],
                                    resize_keyboard=True,
@@ -159,7 +159,7 @@ async def English(message: Message, state: FSMContext) -> None:
                         [
                             KeyboardButton(text="Tashkent"),
                             KeyboardButton(text="Samarkand"),
-                            KeyboardButton(text="Surxondaryo"),
+                            # KeyboardButton(text="Surxondaryo"),
                         ]
                     ],
                     resize_keyboard=True,
@@ -185,7 +185,7 @@ async def check(callback: types.CallbackQuery, state: FSMContext):
                         [
                             KeyboardButton(text="Tashkent"),
                             KeyboardButton(text="Samarkand"),
-                            KeyboardButton(text="Surxondaryo"),
+                            # KeyboardButton(text="Surxondaryo"),
                         ]
                     ],
                     resize_keyboard=True,
