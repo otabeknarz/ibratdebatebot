@@ -36,4 +36,4 @@ class Settings:
 
         self.TIME_ZONE = "Etc/GMT-5"
 
-        self.ENGLISH_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
+        self.ENGLISH_LEVELS = "B1-B2", "C1-C2"

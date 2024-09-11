@@ -50,9 +50,7 @@ class Buttons:
 
         self.english_level_keyboard = ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text="A1"), KeyboardButton(text="A2")],
-                [KeyboardButton(text="B1"), KeyboardButton(text="B2")],
-                [KeyboardButton(text="C1"), KeyboardButton(text="C2")],
+                [KeyboardButton(text="B1-B2"), KeyboardButton(text="C1-C2")],
             ],
             resize_keyboard=True
         )
