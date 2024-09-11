@@ -15,7 +15,7 @@ class Settings:
         self.BOT_TOKEN = os.getenv("BOT_TOKEN")
         self.BASE_URL = "https://otabek.me/"
         self.API_ENDPOINT = self.BASE_URL + "api/v1/"
-        # [POST] People object (dict) should be form {"ID": str, "name": str, "phone_number": str}
+        # [POST] People object (dict) should be form {"ID": str, "name": str, "english_level": str, "phone_number": str}
         self.CREATE_PEOPLE_URL = self.API_ENDPOINT + "create-people/"
         # [GET] Response -> {"status": "true", "people": People} if True else {"status": "false", "detail": "there is
         # no user with this ID"}

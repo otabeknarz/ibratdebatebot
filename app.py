@@ -169,6 +169,7 @@ async def english_level_state(message: types.Message, state: FSMContext):
         reply_markup=buttons.phone_number_btn,
     )
 
+    await state.update_data(english_level=english_level)
     await state.set_state(RegistrationState.phone_number)
 
 
