@@ -48,6 +48,15 @@ class Buttons:
             keyboard=[[KeyboardButton(text="❌ Bekor qilish")]]
         )
 
+        self.english_level_keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="A1"), KeyboardButton(text="A2")],
+                [KeyboardButton(text="B1"), KeyboardButton(text="B2")],
+                [KeyboardButton(text="C1"), KeyboardButton(text="C2")],
+            ],
+            resize_keyboard=True
+        )
+
 
 class InlineButtons:
     def __init__(self):

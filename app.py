@@ -143,10 +143,32 @@ async def name_state(message: types.Message, state: FSMContext):
 
     name = message.text
     await message.answer(
+        "Endi ingliz til darajangizni quyidagi tugmalardan tanlang!",
+        reply_markup=buttons.english_level_keyboard,
+    )
+    await state.update_data(ID=str(message.chat.id), name=name)
+    await state.set_state(RegistrationState.english_level)
+
+
+@dp.message(RegistrationState.english_level)
+async def english_level_state(message: types.Message, state: FSMContext):
+    if not await is_subscribed(bot, message, state):
+        return
+
+    english_level = message.text
+    if english_level not in bot_settings.ENGLISH_LEVELS:
+        await message.answer(
+            "Iltimos quyidagi tugmalardan tanlang",
+            reply_markup=buttons.english_level_keyboard,
+        )
+        await state.set_state(RegistrationState.english_level)
+        return
+
+    await message.answer(
         "Endi telefon raqamingizni yuboring buning uchun quyidagi tugamni bosing!",
         reply_markup=buttons.phone_number_btn,
     )
-    await state.update_data(ID=str(message.chat.id), name=name)
+
     await state.set_state(RegistrationState.phone_number)
 
 
