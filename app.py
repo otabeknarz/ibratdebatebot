@@ -22,7 +22,7 @@ from modules.settings import Settings
 from modules.states import RegistrationState, RegisterToDebateState, SendPostState
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-import json
+logger = logging.getLogger(__name__)
 
 # Load all settings in var bot_settings
 bot_settings = Settings()
@@ -42,7 +42,7 @@ async def is_subscribed(bot, message: types.Message, state=None):
     )
     if is_subscribed_.status == "left":
         await message.answer(
-            "Botdan foydalanishingiz uchun birinchi navbatda bizning kanalga a'zo bo'lishingiz kerak",
+            "Assalomu alaykum hurmatli debatchi,\n\n\"Ibrat Debate\" ga qo'shilish uchun birinchi qadamingiz bilan tabriklayman.\n\nBotdan foydalanishingiz uchun birinchi navbatda bizning ijtimoiy tarmoqdagi kanallarimizga a'zo bo'lishingiz kerak 👇",
             reply_markup=inline_buttons.subscribe_inline,
         )
         if state:
@@ -59,27 +59,32 @@ async def send_welcome(message: types.Message):
         return
 
     try:
-        response = get_req(
-            bot_settings.CHECK_PEOPLE_URL + str(message.chat.id) + "/"
-        ).json()
-    except:
-        await message.answer("Something went wrong :)")
+        response = post_req(
+            bot_settings.CREATE_PEOPLE_URL,
+            json={
+                "ID": str(message.chat.id),
+                "name": message.from_user.full_name,
+            },
+        )
+    except Exception as e:
+        logger.error(e)
+        await message.answer("Something went wrong :)\nPlease contact with admins")
         return
 
     if message.chat.id in bot_settings.ADMINS.values():
         await message.reply(
-            f"Assalomu alaykum <strong>{message.from_user.full_name}!</strong>",
+            f"Assalomu alaykum <strong>{message.from_user.full_name}!</strong>\nAdmin aka xush kelibsiz",
             reply_markup=buttons.admin_main_keyboard,
             parse_mode="html",
         )
-    elif response["status"] == "false":
+    elif response.status_code == 201 or response.json()["people"]["phone_number"] is None:
         await message.reply(
-            "Assalomu alaykum!\nDebate ga qatnashishdan oldin botdan ro'yxatdan o'ting",
+            "Assalomu alaykum\nRo'yxatdan o'tish uchun quyidagi tugmani bosing",
             reply_markup=buttons.register_btn,
         )
     else:
         await message.reply(
-            f"Qaytganingiz bilan <strong>{response['people']['name']}!</strong>",
+            f"Qaytganingiz bilan <strong>{response.json()['people']['name']}!</strong>",
             reply_markup=buttons.main_keyboard,
             parse_mode="html",
         )
@@ -87,7 +92,8 @@ async def send_welcome(message: types.Message):
 
 @dp.callback_query()
 async def check_subs_callback(callback: types.CallbackQuery):
-    if callback.data == "subscribed":
+    data = callback.data.split("|")
+    if data[0] == "subscribed":
         is_subscribed = await bot.get_chat_member(
             chat_id=bot_settings.IBRAT_DEBATE_CHANNEL, user_id=callback.message.chat.id
         )
@@ -95,11 +101,12 @@ async def check_subs_callback(callback: types.CallbackQuery):
             try:
                 response = get_req(
                     bot_settings.CHECK_PEOPLE_URL + str(callback.message.chat.id) + "/"
-                ).json()
-            except:
+                )
+            except Exception as e:
+                logger.error(str(e))
                 await callback.answer("Something went wrong")
                 return
-            if response["status"] == "false":
+            if response.status_code != 200:
                 await callback.message.reply(
                     f"Assalomu alaykum\n"
                     f"Debate ga qatnashishdan oldin botdan ro'yxatdan o'ting",
@@ -121,6 +128,53 @@ async def check_subs_callback(callback: types.CallbackQuery):
                 "Botdan foydalanishingiz uchun birinchi navbatda bizning kanalga a'zo bo'lishingiz kerak",
                 reply_markup=inline_buttons.subscribe_inline,
             )
+
+    elif data[0] == "s_groups":
+        _, group_link, debate_pk = data
+        is_subscribed_ = await bot.get_chat_member(
+            chat_id=bot_settings.DEBATERS_COMMUNITY_USERNAME, user_id=callback.message.chat.id
+        )
+        if is_subscribed_.status == "left":
+            group_inline_buttons = inline_buttons.groups_subscribe_inline(
+                "Guruh",
+                group_link,
+                debate_pk
+            )
+            await callback.message.delete()
+            await callback.message.answer(
+                "Ro'yxatdan o'tishni yakunlash uchun siz debatchilarning "
+                "telegramdagi ikki guruhiga qo'shilishingiz kerak 👇",
+                reply_markup=group_inline_buttons,
+            )
+        else:
+            is_subscribed_ = await bot.get_chat_member(
+                chat_id="@" + group_link.split("/")[-1], user_id=callback.message.chat.id
+            )
+            if is_subscribed_.status == "left":
+                group_inline_buttons = inline_buttons.groups_subscribe_inline(
+                    "Guruh",
+                    group_link,
+                    debate_pk
+                )
+                await callback.message.delete()
+                await callback.message.answer(
+                    "Ro'yxatdan o'tishni yakunlash uchun siz debatchilarning "
+                    "telegramdagi ikki guruhiga qo'shilishingiz kerak 👇",
+                    reply_markup=group_inline_buttons,
+                )
+            else:
+                if post_req(
+                    bot_settings.REGISTER_PEOPLE_TO_DEBATE_URL,
+                    {"people_id": callback.message.chat.id, "debate_id": debate_pk},
+                ).json()["status"] == "true":
+                    await bot.send_photo(
+                        callback.message.chat.id,
+                        photo="https://ibratdebate.uz/static/images/bot-invitation.png",
+                        caption="👏 Tabriklaymiz,\n\n Siz ro'yxatdan muvaffaqqiyatli o'tdingiz ✅\n\n"
+                                " Sizni debatlarda kutamiz.\n\n O'zingiz bilan yaxshi kayfiyat va "
+                                "maqsadlari bir bo'lgan o'rtoqlaringizni birga olib kelishni ham unutmang )",
+                        reply_markup=buttons.main_keyboard,
+                    )
 
 
 @dp.message(TextEqualsFilter("✍️ Ro'yxatdan o'tish"))
@@ -146,7 +200,7 @@ async def name_state(message: types.Message, state: FSMContext):
         "Endi ingliz til darajangizni quyidagi tugmalardan tanlang!",
         reply_markup=buttons.english_level_keyboard,
     )
-    await state.update_data(ID=str(message.chat.id), name=name)
+    await state.update_data(name=name)
     await state.set_state(RegistrationState.english_level)
 
 
@@ -173,16 +227,41 @@ async def english_level_state(message: types.Message, state: FSMContext):
     await state.set_state(RegistrationState.phone_number)
 
 
+# @dp.message(RegistrationState.age)
+# async def age_state(message: types.Message, state: FSMContext):
+#     if not await is_subscribed(bot, message, state):
+#         return
+#
+#     age = message.text
+#     if age not in bot_settings.AGES.keys():
+#         await message.answer(
+#             "Iltimos quyidagi tugmalardan tanlang",
+#             reply_markup=buttons.ages_keyboard,
+#         )
+#         await state.set_state(RegistrationState.age)
+#         return
+#
+#     await message.answer(
+#         "Endi telefon raqamingizni yuboring buning uchun quyidagi tugamni bosing!",
+#         reply_markup=buttons.phone_number_btn,
+#     )
+#
+#     await state.update_data(age=bot_settings.AGES.get(age))
+#     await state.set_state(RegistrationState.phone_number)
+
+
 @dp.message(RegistrationState.phone_number)
 async def phone_number_state(message: types.Message, state: FSMContext):
     if not await is_subscribed(bot, message, state):
         return
 
     await state.update_data(phone_number=message.contact.phone_number)
-    response = post_req(bot_settings.CREATE_PEOPLE_URL, await state.get_data())
-    if response.status_code == 201:
+    response = post_req(bot_settings.UPDATE_PEOPLE_URL + str(message.chat.id) + "/", await state.get_data())
+    if response.status_code in (201, 200):
         await message.answer(
-            "Siz ro'yxatdan o'tdingiz", reply_markup=buttons.main_keyboard
+            "Siz botdan ro'yxatdan o'tdingiz\n"
+            "Debate ga ro'yxatdan o'tish uchun '✍️ Debate ga yozilish' tugmasini bosing",
+            reply_markup=buttons.main_keyboard
         )
     else:
         await message.answer(
@@ -227,8 +306,8 @@ async def register_debate(message: types.Message, state: FSMContext):
     debates = get_req(bot_settings.GET_DEBATES_URL).json()
     debate_texts = [
         debate["location"]["name"]
-        + " "
-        + datetime.datetime.fromisoformat(debate["date"]).strftime("%d/%m %H:%M")
+        + " | "
+        + datetime.datetime.fromisoformat(debate["date"]).strftime("%d/%m | %H:%M")
         for debate in debates
     ]
     debates_markup = ReplyKeyboardMarkup(
@@ -247,7 +326,7 @@ async def register_debate(message: types.Message, state: FSMContext):
 
 
 @dp.message(RegisterToDebateState.location_date)
-async def regitser_debate_fin(message: types.Message, state: FSMContext):
+async def register_debate_fin(message: types.Message, state: FSMContext):
     state_data = await state.get_data()
     if message.text not in state_data["debate_texts"]:
         await message.answer(
@@ -264,7 +343,7 @@ async def regitser_debate_fin(message: types.Message, state: FSMContext):
         await state.set_state(RegisterToDebateState.location_date)
         return
 
-    location, date, time = message.text.split(" ")
+    location, date, time = message.text.split(" | ")
 
     location_date = datetime.datetime(
         year=2024,
@@ -277,20 +356,16 @@ async def regitser_debate_fin(message: types.Message, state: FSMContext):
     for debate in state_data["debates"]:
         if debate["location"]["name"] == location:
             if location_date == datetime.datetime.fromisoformat(debate["date"]):
-                if (
-                    post_req(
-                        bot_settings.REGISTER_PEOPLE_TO_DEBATE_URL,
-                        {"people_id": message.chat.id, "debate_id": debate["pk"]},
-                    ).json()["status"]
-                    == "true"
-                ):
-                    await message.answer(
-                        f"Ro'yxatdan o'tdingiz\n"
-                        f"Joylashuv: {location}\n"
-                        f"Sana va vaqt: {date}, {time}\n"
-                        f"Telegram guruh uchun link: {debate['location']['telegram_group_link']}",
-                        reply_markup=buttons.main_keyboard,
-                    )
+                group_inline_buttons = inline_buttons.groups_subscribe_inline(
+                    debate['location']['name'],
+                    debate['location']['telegram_group_link'],
+                    debate['pk']
+                )
+                await message.answer(
+                    "Ro'yxatdan o'tishni yakunlash uchun siz debatchilarning "
+                    "telegramdagi ikki guruhiga qo'shilishingiz kerak 👇",
+                    reply_markup=group_inline_buttons,
+                )
 
     await state.clear()
 
