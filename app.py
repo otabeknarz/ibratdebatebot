@@ -227,6 +227,11 @@ async def english_level_state(message: types.Message, state: FSMContext):
     await state.set_state(RegistrationState.phone_number)
 
 
+@dp.message()
+async def all_handler(message: types.message):
+    await message.answer("Asosiy", reply_markup=buttons.main_keyboard)
+
+
 # @dp.message(RegistrationState.age)
 # async def age_state(message: types.Message, state: FSMContext):
 #     if not await is_subscribed(bot, message, state):
