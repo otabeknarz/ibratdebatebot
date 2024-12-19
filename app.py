@@ -227,11 +227,6 @@ async def english_level_state(message: types.Message, state: FSMContext):
     await state.set_state(RegistrationState.phone_number)
 
 
-@dp.message()
-async def all_handler(message: types.message):
-    await message.answer("Asosiy", reply_markup=buttons.main_keyboard)
-
-
 # @dp.message(RegistrationState.age)
 # async def age_state(message: types.Message, state: FSMContext):
 #     if not await is_subscribed(bot, message, state):
@@ -416,6 +411,11 @@ async def send_post(message: types.Message, state: FSMContext):
             f"{unregistered_people_count} ta ro'yxatdan o'tgan foydalanuvchi hozir botni ishlatmayapti"
         )
     await state.clear()
+
+
+@dp.message()
+async def all_handler(message: types.message):
+    await message.answer("Asosiy", reply_markup=buttons.main_keyboard)
 
 
 async def on_startup_notify(arg):
