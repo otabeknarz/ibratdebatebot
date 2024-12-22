@@ -9,7 +9,10 @@ class Settings:
     def __init__(self):
         # Admin settings
         self.ADMINS = {
-            "Otabek Narz": 555150342,
+            "Otabek Narz": 5551503420,
+            "Abdulaziz": 1251979840,
+            "Mirzohid": 5541894729,
+            "Sherzodbek": 1431296496,
         }
 
         self.BOT_TOKEN = os.getenv("BOT_TOKEN")
