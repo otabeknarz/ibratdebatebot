@@ -297,7 +297,12 @@ async def cancel_all(message: types.Message, state: FSMContext = None):
     if state:
         await state.clear()
 
-    await message.answer("Bekor qilindi ✅", reply_markup=buttons.main_keyboard)
+    await message.answer(
+        "Bekor qilindi ✅",
+        reply_markup=buttons.main_keyboard
+        if message.chat.id not in bot_settings.ADMINS.values()
+        else buttons.admin_main_keyboard,
+    )
     return
 
 
