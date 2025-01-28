@@ -102,7 +102,7 @@ async def send_welcome(message: types.Message, was_not_registered=False):
             json={
                 "id": str(message.chat.id),
                 "first_name": message.from_user.first_name,
-                "last_name": message.from_user.last_name,
+                "last_name": message.from_user.last_name if message.from_user.last_name else "",
                 "username": message.from_user.username if message.from_user.username else str(message.chat.id),
             },
         )
@@ -112,6 +112,8 @@ async def send_welcome(message: types.Message, was_not_registered=False):
         return
     
     json_response = response.json()
+    print(json_response)
+    print(response)
 
     if response.status_code == 201 or json_response.get("user", {}).get("phone_number") is None:
         await message.reply(
