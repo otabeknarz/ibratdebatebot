@@ -17,15 +17,17 @@ class Settings:
 
         self.BOT_TOKEN = os.getenv("BOT_TOKEN")
         self.BASE_URL = "https://ibratdebate.uz/"
+        self.BASE_MEDIA_URL = self.BASE_URL + "media/"
         self.API_ENDPOINT = self.BASE_URL + "api/v1/"
         # [POST] People object (dict) should be form {"ID": str, "name": str, "english_level": str, "phone_number": str}
-        self.CREATE_PEOPLE_URL = self.API_ENDPOINT + "create-people/"
-        self.UPDATE_PEOPLE_URL = self.API_ENDPOINT + "update-people/"
+        self.AUTH_USER_URL = self.API_ENDPOINT + "users/auth/"
+        self.CREATE_USER_URL = self.API_ENDPOINT + "users/create/"
+        self.UPDATE_USER_URL = self.API_ENDPOINT + "users/update/"
         # [GET] Response -> {"status": "true", "people": People} if True else {"status": "false", "detail": "there is
         # no user with this ID"}
-        self.CHECK_PEOPLE_URL = self.API_ENDPOINT + "check-people/"
+        self.CHECK_USER_URL = self.API_ENDPOINT + "users/check/"
         # [GET] Response -> {"status": "true", "people_ID": [{"ID": "123"}, ...]}
-        self.GET_PEOPLE_ID = self.API_ENDPOINT + "get-people-id/"
+        self.GET_USERS_ID = self.API_ENDPOINT + "users/get-ids/"
         # [GET] Response -> {"status": "true", [{debate_1}, {debate_2}, ...]} if True else {"status": "false",
         # "detail": "something went wrong"}
         self.GET_DEBATES_URL = self.API_ENDPOINT + "get-debates/?format=json"
@@ -49,3 +51,9 @@ class Settings:
             "16-18": "16-18",
             "18 va undan yuqori": "18<",
         }
+
+        self.SEND_FIRST_NAME_MESSAGE = "Iltimos, Ism familiyangizni to'liq yozing."
+        self.SEND_PHONE_NUMBER_MESSAGE = "Telefon raqamingizni quyidagi tugmani bosib yuboring"
+        self.SEND_ENGLISH_LEVEL_MESSAGE = "Ingliz tili darajangizni ushbu tugmalardan tanlab yuboring"
+        self.SEND_AGE_MESSAGE = "Yoshingizni ushbu tugmalardan tanlab yuboring"
+

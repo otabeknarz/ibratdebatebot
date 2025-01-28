@@ -7,6 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram import types
+from aiogram.methods import DeleteWebhook
 
 import sys
 import datetime
@@ -16,11 +17,11 @@ from aiogram.fsm.context import FSMContext
 
 # Local modules
 from modules.filters import TextEqualsFilter
-from modules.functions import get_req, post_req
+from modules.functions import get_req, post_req, patch_req
 from modules.keyboards import Buttons, InlineButtons
 from modules.settings import Settings
 from modules.states import RegistrationState, RegisterToDebateState, SendPostState
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,29 @@ bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTM
 
 buttons = Buttons()
 inline_buttons = InlineButtons()
+
+
+async def run_name_state_(message: types.Message, state: FSMContext):
+    await message.answer(bot_settings.SEND_FIRST_NAME_MESSAGE)
+    await state.clear()
+    await state.set_state(RegistrationState.name)
+
+async def run_phone_number_state_(message: types.Message, state: FSMContext):
+    await message.answer(bot_settings.SEND_PHONE_NUMBER_MESSAGE, reply_markup=buttons.phone_number_btn)
+    await state.clear()
+    await state.set_state(RegistrationState.phone_number)
+
+
+async def run_english_level_state_(message: types.Message, state: FSMContext):
+    await message.answer(bot_settings.SEND_ENGLISH_LEVEL_MESSAGE, reply_markup=buttons.english_level_keyboard)
+    await state.clear()
+    await state.set_state(RegistrationState.english_level)
+
+
+async def run_age_state_(message: types.Message, state: FSMContext):
+    await message.answer(bot_settings.SEND_AGE_MESSAGE, reply_markup=buttons.ages_keyboard)
+    await state.clear()
+    await state.set_state(RegistrationState.age)
 
 
 async def is_subscribed(bot, message: types.Message, state=None):
@@ -54,40 +78,75 @@ async def is_subscribed(bot, message: types.Message, state=None):
 
 # Start Registration
 @dp.message(CommandStart())
-async def send_welcome(message: types.Message):
+async def send_welcome(message: types.Message, was_not_registered=False):
     if not await is_subscribed(bot, message):
         return
-
-    try:
-        response = post_req(
-            bot_settings.CREATE_PEOPLE_URL,
-            json={
-                "ID": str(message.chat.id),
-                "name": message.from_user.full_name,
-            },
-        )
-    except Exception as e:
-        logger.error(e)
-        await message.answer("Something went wrong :)\nPlease contact with admins")
-        return
-
-    if message.chat.id in bot_settings.ADMINS.values():
+    
+    if message.from_user.id in bot_settings.ADMINS.values():
         await message.reply(
             f"Assalomu alaykum <strong>{message.from_user.full_name}!</strong>\nAdmin aka xush kelibsiz",
             reply_markup=buttons.admin_main_keyboard,
             parse_mode="html",
         )
-    elif response.status_code == 201 or response.json()["people"]["phone_number"] is None:
+    
+    if was_not_registered:
         await message.reply(
-            "Assalomu alaykum\nRo'yxatdan o'tish uchun quyidagi tugmani bosing",
+            "Afsuski ma'lumotlaringizni topa olmadik 😔\nRo'yxatdan o'tish uchun quyidagi tugmani bosing.",
+            reply_markup=buttons.register_btn,
+        )
+        return
+
+    try:
+        response = post_req(
+            bot_settings.CREATE_USER_URL,
+            json={
+                "id": str(message.chat.id),
+                "first_name": message.from_user.first_name,
+                "last_name": message.from_user.last_name,
+                "username": message.from_user.username,
+            },
+        )
+    except Exception as e:
+        logger.error(e)
+        await message.answer("Hozirda serverlarimizda tuzatish ishlari olib borilyabdi. Kamchiliklar uchun uzr so'raymiz :)")
+        return
+    
+    json_response = response.json()
+
+    if response.status_code == 201 or json_response.get("user").get("phone_number") is None:
+        await message.reply(
+            "Assalomu alaykum Ibrat Debate ning rasmiy botiga xush kelibsiz\nRo'yxatdan o'tish uchun quyidagi tugmani bosing.",
             reply_markup=buttons.register_btn,
         )
     else:
         await message.reply(
-            f"Qaytganingiz bilan <strong>{response.json()['people']['name']}!</strong>",
+            f"Qaytganingiz bilan <strong>{json_response.get("user").get("first_name")}!</strong>",
             reply_markup=buttons.main_keyboard,
             parse_mode="html",
         )
+
+
+async def check_is_user_registered(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    username = message.from_user.username if message.from_user.username else user_id
+    response = post_req(bot_settings.AUTH_USER_URL, {"id": user_id, "username": username})
+    json_response = response.json()
+    if response.status_code == 201:
+        await send_welcome(message, was_not_registered=True)
+        return False
+    elif json_response.get("registering_is_not_completed"):
+        states = {
+            "first_name": (RegistrationState.name, run_name_state_),
+            "english_level": (RegistrationState.english_level, run_english_level_state_),
+            "age": (RegistrationState.age, run_age_state_),
+            "phone_number": (RegistrationState.phone_number, run_phone_number_state_),
+        }
+        what_to_update = json_response.get("what_to_update")
+        await state.clear()
+        await state.set_state(states.get(what_to_update)[0])
+        await states.get(what_to_update)[1](message, state)
+        return False
+    return True
 
 
 @dp.callback_query()
@@ -100,7 +159,7 @@ async def check_subs_callback(callback: types.CallbackQuery):
         if is_subscribed.status != "left":
             try:
                 response = get_req(
-                    bot_settings.CHECK_PEOPLE_URL + str(callback.message.chat.id) + "/"
+                    bot_settings.CHECK_USER_URL + str(callback.message.chat.id) + "/"
                 )
             except Exception as e:
                 logger.error(str(e))
@@ -163,10 +222,13 @@ async def check_subs_callback(callback: types.CallbackQuery):
                     reply_markup=group_inline_buttons,
                 )
             else:
-                if post_req(
+                response = post_req(
                     bot_settings.REGISTER_PEOPLE_TO_DEBATE_URL,
-                    {"people_id": callback.message.chat.id, "debate_id": debate_pk},
-                ).json()["status"] == "true":
+                    {"user_id": callback.message.chat.id, "debate_id": debate_pk},
+                )
+                json_response = response.json()
+                if response.status_code in (200, 201):
+                    qr_code_path = json_response.get("qr_code_path")
                     await bot.send_photo(
                         callback.message.chat.id,
                         photo="https://ibratdebate.uz/static/images/bot-invitation.png",
@@ -174,6 +236,12 @@ async def check_subs_callback(callback: types.CallbackQuery):
                                 " Sizni debatlarda kutamiz.\n\n O'zingiz bilan yaxshi kayfiyat va "
                                 "maqsadlari bir bo'lgan o'rtoqlaringizni birga olib kelishni ham unutmang )",
                         reply_markup=buttons.main_keyboard,
+                    )
+                    await asyncio.sleep(1)
+                    await bot.send_photo(
+                        callback.message.chat.id,
+                        bot_settings.BASE_MEDIA_URL + qr_code_path,
+                        caption="Manabu sizning ticketingiz, borganingizda koordinatorlarga ushbu ticketni ko'rsatasiz, rahmat!"
                     )
 
 
@@ -183,7 +251,7 @@ async def run_name_state(message: types.Message, state: FSMContext):
         return
 
     await message.answer(
-        "Ism familiyangizni to'liq yozing",
+        "Iltimos, Ism familiyangizni to'liq yozing.",
         reply_markup=buttons.remove_btn,
     )
 
@@ -197,10 +265,26 @@ async def name_state(message: types.Message, state: FSMContext):
 
     name = message.text
     await message.answer(
-        "Endi ingliz til darajangizni quyidagi tugmalardan tanlang!",
-        reply_markup=buttons.english_level_keyboard,
+        "Quyidagi tugmani bosib o'z telefon raqamingizni yuboring.",
+        reply_markup=buttons.phone_number_btn,
     )
-    await state.update_data(name=name)
+    await state.update_data(first_name=name)
+    await state.set_state(RegistrationState.phone_number)
+
+
+@dp.message(RegistrationState.phone_number)
+async def phone_number_state(message: types.Message, state: FSMContext):
+    if not await is_subscribed(bot, message, state):
+        return
+    
+    if not message.contact or message.contact.user_id != message.from_user.id:
+        await state.set_state(RegistrationState.phone_number)
+        await message.answer("Iltimos quyidagi tugmani bosib o'z telefon raqamingizni yuboring", buttons.phone_number_btn)
+        return
+
+    await state.update_data(phone_number=message.contact.phone_number)
+    
+    await message.answer("Iingliz til darajangizni quyidagi tugmalardan tanlang!", reply_markup=buttons.english_level_keyboard)
     await state.set_state(RegistrationState.english_level)
 
 
@@ -219,47 +303,35 @@ async def english_level_state(message: types.Message, state: FSMContext):
         return
 
     await message.answer(
-        "Endi telefon raqamingizni yuboring buning uchun quyidagi tugamni bosing!",
-        reply_markup=buttons.phone_number_btn,
+        "Yoshingizni quyidagi tugmalardan tanlang!",
+        reply_markup=buttons.ages_keyboard,
     )
 
     await state.update_data(english_level=english_level)
-    await state.set_state(RegistrationState.phone_number)
+    await state.set_state(RegistrationState.age)
 
 
-# @dp.message(RegistrationState.age)
-# async def age_state(message: types.Message, state: FSMContext):
-#     if not await is_subscribed(bot, message, state):
-#         return
-#
-#     age = message.text
-#     if age not in bot_settings.AGES.keys():
-#         await message.answer(
-#             "Iltimos quyidagi tugmalardan tanlang",
-#             reply_markup=buttons.ages_keyboard,
-#         )
-#         await state.set_state(RegistrationState.age)
-#         return
-#
-#     await message.answer(
-#         "Endi telefon raqamingizni yuboring buning uchun quyidagi tugamni bosing!",
-#         reply_markup=buttons.phone_number_btn,
-#     )
-#
-#     await state.update_data(age=bot_settings.AGES.get(age))
-#     await state.set_state(RegistrationState.phone_number)
-
-
-@dp.message(RegistrationState.phone_number)
-async def phone_number_state(message: types.Message, state: FSMContext):
+@dp.message(RegistrationState.age)
+async def age_state(message: types.Message, state: FSMContext):
     if not await is_subscribed(bot, message, state):
         return
 
-    await state.update_data(phone_number=message.contact.phone_number)
-    response = post_req(bot_settings.UPDATE_PEOPLE_URL + str(message.chat.id) + "/", await state.get_data())
+    age = message.text
+    if age not in bot_settings.AGES.keys():
+        await message.answer(
+            "Iltimos quyidagi tugmalardan tanlang",
+            reply_markup=buttons.ages_keyboard,
+        )
+        await state.set_state(RegistrationState.age)
+        return
+
+    await state.update_data(age=bot_settings.AGES.get(age))
+
+    response = patch_req(bot_settings.UPDATE_USER_URL + str(message.chat.id) + "/", await state.get_data())
+
     if response.status_code in (201, 200):
         await message.answer(
-            "Siz botdan ro'yxatdan o'tdingiz\n"
+            f"Tabriklayman <strong>{response.json().get("first_name")}</strong>, siz botdan ro'yxatdan o'tdingiz!\n"
             "Debate ga ro'yxatdan o'tish uchun '✍️ Debate ga yozilish' tugmasini bosing",
             reply_markup=buttons.main_keyboard
         )
@@ -276,7 +348,9 @@ async def phone_number_state(message: types.Message, state: FSMContext):
 
 # Show Debates
 @dp.message(TextEqualsFilter("👀 Kelasi Debate larni ko'rish"))
-async def show_debates(message: types.Message):
+async def show_debates(message: types.Message, state: FSMContext):
+    if not await check_is_user_registered(message, state):
+        return
     debates = get_req(bot_settings.GET_DEBATES_URL).json()
     msg = "<b>Bizda kelasi debate lar:</b>\n"
     for key, debate in enumerate(debates):
@@ -308,6 +382,9 @@ async def cancel_all(message: types.Message, state: FSMContext = None):
 
 @dp.message(TextEqualsFilter("✍️ Debate ga yozilish"))
 async def register_debate(message: types.Message, state: FSMContext):
+    if not await check_is_user_registered(message, state):
+        return
+
     debates = get_req(bot_settings.GET_DEBATES_URL).json()
     debate_texts = [
         debate["location"]["name"]
@@ -320,7 +397,6 @@ async def register_debate(message: types.Message, state: FSMContext):
         + [[KeyboardButton(text="❌ Bekor qilish")]],
         resize_keyboard=True,
     )
-
     await message.answer(
         "Bu yerda bizda tez kunda bo'ladigan debate larimizning ro'yxati",
         reply_markup=debates_markup,
@@ -332,6 +408,9 @@ async def register_debate(message: types.Message, state: FSMContext):
 
 @dp.message(RegisterToDebateState.location_date)
 async def register_debate_fin(message: types.Message, state: FSMContext):
+    if not await check_is_user_registered(message, state):
+        return
+
     state_data = await state.get_data()
     if message.text not in state_data["debate_texts"]:
         await message.answer(
@@ -351,7 +430,7 @@ async def register_debate_fin(message: types.Message, state: FSMContext):
     location, date, time = message.text.split(" | ")
 
     location_date = datetime.datetime(
-        year=2024,
+        year=2025,
         day=int(date.split("/")[0]),
         month=int(date.split("/")[1]),
         hour=int(time.split(":")[0]),
@@ -419,7 +498,9 @@ async def send_post(message: types.Message, state: FSMContext):
 
 
 @dp.message()
-async def all_handler(message: types.message):
+async def all_handler(message: types.message, state: FSMContext):
+    if not await check_is_user_registered(message, state):
+        return
     await message.answer("Asosiy", reply_markup=buttons.main_keyboard)
 
 
@@ -436,6 +517,7 @@ async def on_startup_notify(arg):
 
 async def main() -> None:
     # And the run events dispatching
+    await bot(DeleteWebhook(drop_pending_updates=True))
     await dp.start_polling(bot, on_startup_notify=on_startup_notify)
 
 
