@@ -103,7 +103,7 @@ async def send_welcome(message: types.Message, was_not_registered=False):
                 "id": str(message.chat.id),
                 "first_name": message.from_user.first_name,
                 "last_name": message.from_user.last_name,
-                "username": message.from_user.username,
+                "username": message.from_user.username if message.from_user.username else str(message.chat.id),
             },
         )
     except Exception as e:
@@ -113,7 +113,7 @@ async def send_welcome(message: types.Message, was_not_registered=False):
     
     json_response = response.json()
 
-    if response.status_code == 201 or json_response.get("user").get("phone_number") is None:
+    if response.status_code == 201 or json_response.get("user", {}).get("phone_number") is None:
         await message.reply(
             "Assalomu alaykum Ibrat Debate ning rasmiy botiga xush kelibsiz\nRo'yxatdan o'tish uchun quyidagi tugmani bosing.",
             reply_markup=buttons.register_btn,
