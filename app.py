@@ -228,6 +228,8 @@ async def check_subs_callback(callback: types.CallbackQuery):
                     bot_settings.REGISTER_PEOPLE_TO_DEBATE_URL,
                     {"user_id": callback.message.chat.id, "debate_id": debate_pk},
                 )
+                print({"user_id": callback.message.chat.id, "debate_id": debate_pk})
+                print(response)
                 json_response = response.json()
                 if response.status_code in (200, 201):
                     qr_code_path = json_response.get("qr_code_path")
@@ -338,6 +340,8 @@ async def age_state(message: types.Message, state: FSMContext):
             reply_markup=buttons.main_keyboard
         )
     else:
+        print(response.status_code)
+        print(response.json())
         await message.answer(
             "Xatolik yuz berdi qaytadan urinib ko'ring",
             reply_markup=buttons.register_btn,
