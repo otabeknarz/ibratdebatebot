@@ -112,8 +112,6 @@ async def send_welcome(message: types.Message, was_not_registered=False):
         return
     
     json_response = response.json()
-    print(json_response)
-    print(response)
 
     if response.status_code == 201 or json_response.get("user", {}).get("phone_number") is None:
         await message.reply(
@@ -228,8 +226,6 @@ async def check_subs_callback(callback: types.CallbackQuery):
                     bot_settings.REGISTER_PEOPLE_TO_DEBATE_URL,
                     {"user_id": callback.message.chat.id, "debate_id": debate_pk},
                 )
-                print({"user_id": callback.message.chat.id, "debate_id": debate_pk})
-                print(response)
                 json_response = response.json()
                 if response.status_code in (200, 201):
                     qr_code_path = json_response.get("qr_code_path")
