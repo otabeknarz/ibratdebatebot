@@ -16,9 +16,9 @@ class Settings:
         }
 
         self.BOT_TOKEN = os.getenv("BOT_TOKEN")
-        self.BASE_URL = "https://ibratdebate.uz/"
-        self.BASE_MEDIA_URL = self.BASE_URL + "media/"
-        self.API_ENDPOINT = self.BASE_URL + "api/v1/"
+        self.BASE_URL = os.getenv("BASE_URL")
+        self.BASE_MEDIA_URL = self.BASE_URL + "/media/"
+        self.API_ENDPOINT = self.BASE_URL + "/api/v1/"
         # [POST] People object (dict) should be form {"ID": str, "name": str, "english_level": str, "phone_number": str}
         self.AUTH_USER_URL = self.API_ENDPOINT + "users/auth/"
         self.CREATE_USER_URL = self.API_ENDPOINT + "users/create/"
