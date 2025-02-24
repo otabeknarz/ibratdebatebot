@@ -110,7 +110,7 @@ async def send_welcome(message: types.Message, was_not_registered=False):
         logger.error(e)
         await message.answer("Hozirda serverlarimizda tuzatish ishlari olib borilyabdi. Kamchiliklar uchun uzr so'raymiz :)")
         return
-    
+
     json_response = response.json()
 
     if response.status_code == 201 or json_response.get("user", {}).get("phone_number") is None:
@@ -336,8 +336,6 @@ async def age_state(message: types.Message, state: FSMContext):
             reply_markup=buttons.main_keyboard
         )
     else:
-        print(response.status_code)
-        print(response.json())
         await message.answer(
             "Xatolik yuz berdi qaytadan urinib ko'ring",
             reply_markup=buttons.register_btn,
@@ -414,13 +412,13 @@ async def register_debate_fin(message: types.Message, state: FSMContext):
         return
 
     state_data = await state.get_data()
-    if message.text not in state_data["debate_texts"]:
+    if message.text not in state_data.get("debate_texts", []):
         await message.answer(
             "Quyidagi tugmalardan tanlashingiz mumkin",
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [KeyboardButton(text=debate_text)]
-                    for debate_text in state_data["debate_texts"]
+                    for debate_text in state_data.get("debate_texts", [])
                 ]
                 + [[KeyboardButton(text="❌ Bekor qilish")]],
                 resize_keyboard=True,
@@ -430,6 +428,7 @@ async def register_debate_fin(message: types.Message, state: FSMContext):
         return
 
     location, date, time = message.text.split(" | ")
+    print(location, date, time)
 
     location_date = datetime.datetime(
         year=2025,
@@ -439,13 +438,21 @@ async def register_debate_fin(message: types.Message, state: FSMContext):
         minute=int(time.split(":")[1]),
         tzinfo=pytz.timezone(bot_settings.TIME_ZONE),
     )
-    for debate in state_data["debates"]:
-        if debate["location"]["name"] == location:
-            if location_date == datetime.datetime.fromisoformat(debate["date"]):
+    for debate in state_data.get("debates", []):
+        if debate.get("location", {}).get("name") == location:
+            debate_date = datetime.datetime.fromisoformat(debate["date"])
+            if location_date == datetime.datetime(
+                    debate_date.year,
+                    debate_date.month,
+                    debate_date.day,
+                    debate_date.hour,
+                    debate_date.minute,
+                    tzinfo=pytz.timezone(bot_settings.TIME_ZONE),
+            ):
                 group_inline_buttons = inline_buttons.groups_subscribe_inline(
                     debate['location']['name'],
                     debate['location']['telegram_group_link'],
-                    debate['pk']
+                    debate['id']
                 )
                 await message.answer(
                     "Ro'yxatdan o'tishni yakunlash uchun siz debatchilarning "
