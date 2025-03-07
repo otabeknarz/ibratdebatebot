@@ -6,9 +6,17 @@ from . import settings
 bot_settings = settings.Settings()
 
 
-async def create_user(id: str, name: str, username: str) -> aiohttp.ClientResponse:
+async def create_user(id: str, first_name: str, last_name: str, username: str) -> aiohttp.ClientResponse:
     async with aiohttp.ClientSession() as session:
-        response = await session.post(bot_settings.CREATE_USER_URL, json={"id": id, "name": name, "username": username})
+        response = await session.post(
+            bot_settings.CREATE_USER_URL,
+            json={
+                "id": id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "username": username
+            }
+        )
     return response
 
 

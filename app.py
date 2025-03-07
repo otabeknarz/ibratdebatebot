@@ -17,7 +17,7 @@ from aiogram.fsm.context import FSMContext
 
 # Local modules
 from modules.filters import TextEqualsFilter
-from modules.functions import get_req, post_req, patch_req
+from modules.functions import get_req, post_req, patch_req, create_user
 from modules.keyboards import Buttons, InlineButtons
 from modules.settings import Settings
 from modules.states import RegistrationState, RegisterToDebateState, SendPostState
@@ -249,6 +249,13 @@ async def check_subs_callback(callback: types.CallbackQuery):
 async def run_name_state(message: types.Message, state: FSMContext):
     if not await is_subscribed(bot, message):
         return
+
+    await create_user(
+        str(message.from_user.id),
+        message.from_user.first_name,
+        message.from_user.last_name,
+        message.from_user.username,
+    )
 
     await message.answer(
         "Iltimos, Ism familiyangizni to'liq yozing.",
